@@ -51,41 +51,41 @@ CREATE INDEX idx_flower_orders_copy_date ON flower_orders_copy(order_date);
 
 -- НЕОПТИМІЗОВАНИЙ
 -- Finds flowers with most and least orders
-EXPLAIN
+EXPLAIN ANALYZE
 SELECT 
     (SELECT CONCAT(name_flower, ': ', COUNT(*))
     FROM flower_orders fo
     JOIN flowers f ON fo.flower_id = f.flower_id
-    GROUP BY f.flower_id, f.name_flower
-    ORDER BY COUNT(*) ASC
+    GROUP BY f.flower_id
+    ORDER BY COUNT(*) ASC, f.name_flower ASC 
     LIMIT 1) AS least_ordered_flower,
     
     (SELECT CONCAT(name_flower, ': ', COUNT(*))
     FROM flower_orders fo
     JOIN flowers f ON fo.flower_id = f.flower_id
-    GROUP BY f.flower_id, f.name_flower
-    ORDER BY COUNT(*) DESC
+    GROUP BY f.flower_id
+    ORDER BY COUNT(*) DESC, f.name_flower ASC 
     LIMIT 1) AS most_ordered_flower;
 
    
    
 -- ОПТИМІЗОВАНЕ СОНЕЧКО
-EXPLAIN
+EXPLAIN ANALYZE
 WITH Flower_order_counts AS (
     SELECT 
         f.name_flower,
         COUNT(*) AS order_count
     FROM flower_orders_copy fo 
     JOIN flowers f ON fo.flower_id = f.flower_id
-    GROUP BY f.flower_id, f.name_flower
+    GROUP BY f.flower_id
 )
 SELECT 
-    (SELECT CONCAT(name_flower, ': ', order_count)
-     FROM Flower_order_counts
-     ORDER BY order_count ASC
+    (SELECT CONCAT(foc.name_flower, ': ', foc.order_count)
+     FROM Flower_order_counts foc
+     ORDER BY foc.order_count ASC
      LIMIT 1) AS least_ordered_flower,
      
-    (SELECT CONCAT(name_flower, ': ', order_count)
-     FROM Flower_order_counts
-     ORDER BY order_count DESC
+    (SELECT CONCAT(foc.name_flower, ': ', foc.order_count)
+     FROM Flower_order_counts foc
+     ORDER BY foc.order_count DESC
      LIMIT 1) AS most_ordered_flower;
