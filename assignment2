@@ -42,14 +42,16 @@ CREATE TABLE IF NOT EXISTS flower_orders (
 SELECT * FROM flower_orders;
 - тиць )
 
+- Таблиця з індексацією, для оптимізації
+CREATE TABLE flower_orders_copy AS 
+SELECT * FROM flower_orders;
 
+CREATE INDEX idx_flower_orders_copy_date ON flower_orders_copy(order_date);
 
- --  індекси
-CREATE INDEX idx_flower_orders_date ON flower_orders(order_date);
 
 -- НЕОПТИМІЗОВАНИЙ
 -- Finds flowers with most and least orders
-EXPLAIN ANALYZE
+EXPLAIN
 SELECT 
     (SELECT CONCAT(name_flower, ': ', COUNT(*))
     FROM flower_orders fo
@@ -68,12 +70,12 @@ SELECT
    
    
 -- ОПТИМІЗОВАНЕ СОНЕЧКО
-EXPLAIN ANALYZE
+EXPLAIN
 WITH Flower_order_counts AS (
     SELECT 
         f.name_flower,
         COUNT(*) AS order_count
-    FROM flower_orders fo
+    FROM flower_orders_copy fo 
     JOIN flowers f ON fo.flower_id = f.flower_id
     GROUP BY f.flower_id, f.name_flower
 )
