@@ -1,0 +1,89 @@
+CREATE DATABASE AS2;
+USE AS2;
+
+
+CREATE TABLE  flowers (
+    flower_id CHAR(36) PRIMARY KEY,
+    name_flower VARCHAR(255) NOT NULL,
+    delivery_flower ENUM('Same-Day Delivery', 'Next-Day Delivery', 'International Delivery', 'Subscription Delivery ', 'Express Delivery', 'Contactless Delivery', 'Eco-Friendly Delivery') NOT NULL,
+    flower_count_ INT,
+    type_flower ENUM('Single-Stem Flowers', 'Spray Flowers (Bushy)', 'Bulbous Flowers', 'Climbing Flowers', 'Perennial Flowers','Annual Flowers', 'Wildflowers') NOT NULL,
+    price_for_one INT,
+    times_buy INT
+);
+
+SELECT * FROM flowers;
+- тиць )
+
+CREATE TABLE employees (
+    id_employee CHAR(36) PRIMARY KEY,
+    name_employee VARCHAR(100),
+    surname_employee VARCHAR(100),
+    work_hours INT,
+    level_employee ENUM('Beginner Florist ', 'Apprentice Florist', 'Certified Florist', 'Advanced Florist', 'Floral Designer', 'Flower Shop Manager', 'Master of Floral Arts') NOT NULL,
+    count_works INT,
+    times_deliver INT
+);
+
+SELECT * FROM employees;
+- тиць )
+
+CREATE TABLE IF NOT EXISTS flower_orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    name_customer VARCHAR(100),
+    order_date DATE NOT NULL,
+    flower_id CHAR(36),
+    id_employee CHAR(36),
+    price_bouquet INT, 
+    FOREIGN KEY (flower_id) REFERENCES flowers(flower_id),
+    FOREIGN KEY (id_employee) REFERENCES employees(id_employee)
+);
+
+SELECT * FROM flower_orders;
+- тиць )
+
+
+
+ --  індекси
+CREATE INDEX idx_flower_orders_date ON flower_orders(order_date);
+
+-- НЕОПТИМІЗОВАНИЙ
+-- Finds flowers with most and least orders
+EXPLAIN ANALYZE
+SELECT 
+    (SELECT CONCAT(name_flower, ': ', COUNT(*))
+    FROM flower_orders fo
+    JOIN flowers f ON fo.flower_id = f.flower_id
+    GROUP BY f.flower_id, f.name_flower
+    ORDER BY COUNT(*) ASC
+    LIMIT 1) AS least_ordered_flower,
+    
+    (SELECT CONCAT(name_flower, ': ', COUNT(*))
+    FROM flower_orders fo
+    JOIN flowers f ON fo.flower_id = f.flower_id
+    GROUP BY f.flower_id, f.name_flower
+    ORDER BY COUNT(*) DESC
+    LIMIT 1) AS most_ordered_flower;
+
+   
+   
+-- ОПТИМІЗОВАНЕ СОНЕЧКО
+EXPLAIN ANALYZE
+WITH Flower_order_counts AS (
+    SELECT 
+        f.name_flower,
+        COUNT(*) AS order_count
+    FROM flower_orders fo
+    JOIN flowers f ON fo.flower_id = f.flower_id
+    GROUP BY f.flower_id, f.name_flower
+)
+SELECT 
+    (SELECT CONCAT(name_flower, ': ', order_count)
+     FROM Flower_order_counts
+     ORDER BY order_count ASC
+     LIMIT 1) AS least_ordered_flower,
+     
+    (SELECT CONCAT(name_flower, ': ', order_count)
+     FROM Flower_order_counts
+     ORDER BY order_count DESC
+     LIMIT 1) AS most_ordered_flower;
